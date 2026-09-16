@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+dist_old_*
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+.vercel
+.vite
+.workbuddy
+cloud-functions
+cloud
+cloudbaserc.json

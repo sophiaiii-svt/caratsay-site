@@ -1,0 +1,12 @@
+{
+  "items": [],
+  "youtube": 0,
+  "bilibili": 0,
+  "weibo": 0,
+  "douyin": 0,
+  "tiktok": 0,
+  "xiaohongshu": 0,
+  "at": null,
+  "updatedAt": "2026-08-24T00:00:00.000Z",
+  "note": "本文件由 sync-feeds 云函数每30分钟定时抓取全平台公开动态后覆盖写入。首次部署为种子空快照，云函数运行后自动填充。"
+}
