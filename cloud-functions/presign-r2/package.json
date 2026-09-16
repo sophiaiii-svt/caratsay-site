@@ -1,0 +1,6 @@
+{
+  "name": "presign-r2",
+  "version": "1.0.0",
+  "private": true,
+  "description": "为 Cloudflare R2 生成 PUT 预签名 URL（纯 Node SigV4，零依赖）"
+}

@@ -79,6 +79,34 @@ export async function resolveViaCloud(url: string, timeoutMs = 12000): Promise<R
   return { ok: false, error: 'cloud resolve failed' };
 }
 
+/**
+ * 调用云端 presign-r2 云函数，为 Cloudflare R2 生成 PUT 预签名地址与公开直链。
+ * 与 resolve-link 一样走 CloudBase Web SDK（app.callFunction），无需把密钥放前端。
+ */
+export async function presignForR2({ contentType, size, ext }: {
+  contentType: string;
+  size: number;
+  ext: string;
+}): Promise<{ uploadUrl: string; publicUrl: string; key: string }> {
+  const app = await ensureApp();
+  const res: any = await app.callFunction({
+    name: 'presign-r2',
+    data: { contentType, size, ext },
+  });
+  let data = res && res.result ? res.result : res;
+  if (data && typeof data.body === 'string') {
+    try {
+      data = JSON.parse(data.body);
+    } catch {
+      data = {};
+    }
+  }
+  if (!data || !data.uploadUrl) {
+    throw new Error((data && data.error) || 'R2 预签名失败');
+  }
+  return { uploadUrl: data.uploadUrl, publicUrl: data.publicUrl, key: data.key };
+}
+
 /** 前端直接调用 YouTube oembed（浏览器跨域友好，确定可用），但无发布时间 */
 export async function resolveYouTube(url: string, timeoutMs = 8000): Promise<ResolvedMeta | null> {
   try {

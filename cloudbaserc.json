@@ -1,0 +1,69 @@
+{
+  "envId": "sophia0214svt0526-d7d10lc48336b0",
+  "functions": [
+    {
+      "name": "wvs-sync",
+      "localPath": "cloud/wvs-sync",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 60,
+      "envVariables": {
+        "SUPABASE_URL": "https://dfcpcllldgmdxfrpeiel.supabase.co",
+        "SUPABASE_ANON_KEY": "sb_publishable_mom_kOxAnqsvkSrtTM7_Xg_gxGRPdyU",
+        "SUPABASE_BUCKET": "caratsay",
+        "WEVERSE_COMMUNITY": "seventeen",
+        "POST_LIMIT": "40",
+        "NOTICE_LIMIT": "20",
+        "LIVE_LIMIT": "10",
+        "WEVERSE_TOKEN": "REPLACE_WITH_YOUR_WEVERSE_TOKEN"
+      }
+    },
+    {
+      "name": "resolve-link",
+      "localPath": "cloud/resolve-link",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 30
+    },
+    {
+      "name": "sync-feeds",
+      "localPath": "cloud-functions/sync-feeds",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 60,
+      "envVariables": {
+        "SUPABASE_URL": "https://dfcpcllldgmdxfrpeiel.supabase.co",
+        "SUPABASE_ANON_KEY": "sb_publishable_mom_kOxAnqsvkSrtTM7_Xg_gxGRPdyU",
+        "SUPABASE_BUCKET": "caratsay"
+      }
+    },
+    {
+      "name": "diagnose",
+      "localPath": "cloud-functions/diagnose",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 60
+    },
+    {
+      "name": "net-check",
+      "localPath": "cloud/net-check",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 60
+    },
+    {
+      "name": "presign-r2",
+      "localPath": "cloud-functions/presign-r2",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 30,
+      "envVariables": {
+        "R2_ACCOUNT_ID": "REPLACE_WITH_CLOUDFLARE_ACCOUNT_ID",
+        "R2_ACCESS_KEY_ID": "REPLACE_WITH_R2_ACCESS_KEY_ID",
+        "R2_SECRET_ACCESS_KEY": "REPLACE_WITH_R2_SECRET_ACCESS_KEY",
+        "R2_BUCKET": "REPLACE_WITH_BUCKET_NAME",
+        "R2_PUBLIC_URL": "REPLACE_WITH_PUBLIC_URL_e.g.https://pub-xxxx.r2.dev"
+      }
+    }
+  ]
+}
