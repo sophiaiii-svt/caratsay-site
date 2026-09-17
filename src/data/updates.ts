@@ -3974,4 +3974,30 @@ export const updates: UpdateItem[] = [
     date: '2026-09-02T06:03:00',
     url: 'https://www.instagram.com/p/DcxjJ_RES2Y/',
   },
+
+  /* ───────── 2026-09-15 ~ 09-16（Woozi / Hoshi 陆军现役入伍 · 回溯补全 + 前一日） ───────── */
+  {
+    id: 'u314',
+    category: 'other',
+    memberId: 'woozi',
+    platform: 'other',
+    kind: 'other',
+    title: 'Woozi（李知勋）于 2026-09-15 以陆军现役身份入伍',
+    description:
+      'SEVENTEEN 成员 Woozi（李知勋 / Lee Jihoon / 위즈）于 2026-09-15 以陆军现役士兵（active-duty soldier）身份进入训练所开始基础军事训练，预计 2027-03-14 退伍。入伍前一日他以寸头造型现身 SEVENTEEN《NEW_》世界巡演仁川场（9/13–14）观众席为成员应援。PLEDIS 此前于 7/8 经 Weverse 公告其入伍安排。本次为回溯补全：9/15 当日同步执行时曾误将该动向判读为 2025 年旧闻而未录入，经 9/16–9/17 多源复核（DIPE / KpopEcho / 韩星网 等，均锚定 2026 年 NEW_ 仁川巡演）确认为 2026 年真实事件。',
+    date: '2026-09-15T09:00:00',
+    url: U.weverse,
+  },
+  {
+    id: 'u315',
+    category: 'other',
+    memberId: 'hoshi',
+    platform: 'other',
+    kind: 'other',
+    title: 'Hoshi（权顺荣）于 2026-09-16 以陆军现役身份入伍',
+    description:
+      'SEVENTEEN 成员 Hoshi（权顺荣 / Kwon Soonyoung / 호시）于 2026-09-16 以陆军现役士兵身份进入训练所开始基础军事训练，预计 2027-03-15 退伍。入伍前一晚他曾在 Weverse 与 CARAT 直播告别并公开寸头造型。Hoshi 与 Woozi（9/15）于 9 月中接连以现役身份入伍，为继 Jeonghan(2025-09) / Wonwoo(2026-04) / Vernon(2026-08-20) / DK(2026-09-08) / Mingyu(2026-09-10) 之后入伍的成员。据 DIPE / KpopRadar / 韩星网 等多语媒体与 PLEDIS 7/8 Weverse 公告核实（均锚定 2026 年 NEW_ 仁川巡演）。',
+    date: '2026-09-16T09:00:00',
+    url: U.weverse,
+  },
 ];
