@@ -15,12 +15,16 @@
  *   - 已存在于 R2 的同名 Key 会被覆盖（幂等，可重复跑）。
  */
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const SRC_URL = 'https://dfcpcllldgmdxfrpeiel.supabase.co';
 const SRC_KEY = 'sb_publishable_mom_kOxAnqsvkSrtTM7_Xg_gxGRPdyU';
 const SRC_BUCKET = 'caratsay';
 
 const DRY = process.env.DRY_RUN === '1';
+const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+const agent = proxy ? new HttpsProxyAgent(proxy) : undefined;
 const r2 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -28,6 +32,7 @@ const r2 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
+  requestHandler: new NodeHttpHandler({ httpsAgent: agent }),
 });
 const R2_BUCKET = process.env.R2_BUCKET;
 

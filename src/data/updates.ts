@@ -3940,6 +3940,21 @@ export const updates: UpdateItem[] = [
     url: U.xiaohongshuJeonghan,
   },
 
+  /* ───────── 2026-09-17 同步（洪知秀 Joshua 小红书 · 主页卡片渲染发现的新笔记） ───────── */
+  {
+    id: 'u316',
+    category: 'member',
+    memberId: 'joshua',
+    platform: 'xiaohongshu',
+    kind: 'post',
+    title: 'Joshua 小红书更新 · 度个假🌤️',
+    description:
+      '度个假🌤️（joshu_acoustic 小红书主页中转 xhslink 渲染出的新笔记卡；缺 xhslink 短链/explore 深链，链接暂用主页中转，待补）',
+    // [估计] 仅由主页卡片渲染确认标题，精确发布时间未知，按近期（约 9 月中旬）推断
+    date: '2026-09-16T12:00:00',
+    url: U.xiaohongshuJoshua,
+  },
+
   /* ───────── 2026-08-30 ~ 09-02（回溯补全 · Jeonghan 个人 Instagram 历史缺口 · imginn 逐帖实抓核验 caption 原文照抄） ───────── */
   {
     id: 'u311',
