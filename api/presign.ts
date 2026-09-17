@@ -13,8 +13,6 @@
  *
  * R2 桶需：① 开启公开读；② CORS 允许本站 origin 的 PUT 方法。
  */
-export const config = { runtime: 'nodejs20.x' };
-
 const MAX_BYTES = 50 * 1024 * 1024; // 50 MB，与前端上限一致
 
 export default async function handler(req: any, res: any) {
