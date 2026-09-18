@@ -216,10 +216,12 @@ async function writeToSupabase(items: any[], counts: any, at: number) {
   // 因此 DELETE 后稍作等待，并对 409 做有限次重试。
   const LAST_WRITE = 3;
   for (let attempt = 1; attempt <= LAST_WRITE; attempt++) {
+    let delInfo = '';
     try {
-      await fetch(objUrl, { method: 'DELETE', headers: baseHeaders });
-    } catch {
-      /* 旧文件不存在忽略 */
+      const del = await fetch(objUrl, { method: 'DELETE', headers: baseHeaders });
+      delInfo = `del=${del.status}:${(await del.text().catch(() => '')).slice(0, 120)}`;
+    } catch (e: any) {
+      delInfo = `del=throw:${e?.message || e}`;
     }
     await new Promise((r) => setTimeout(r, attempt === 1 ? 1500 : 500));
     const res = await fetch(objUrl, {
@@ -231,7 +233,7 @@ async function writeToSupabase(items: any[], counts: any, at: number) {
     const detail = await res.text().catch(() => '');
     const isDuplicate = detail.includes('KeyAlreadyExists') || detail.includes('Duplicate');
     if (!isDuplicate || attempt === LAST_WRITE) {
-      throw new Error(`Supabase 写入失败 (${res.status}): ${detail}`);
+      throw new Error(`Supabase 写入失败 (${res.status}) [${delInfo}]: ${detail}`);
     }
   }
   return false;
