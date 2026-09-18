@@ -205,12 +205,6 @@ async function readExisting() {
 async function writeToSupabase(items: any[], counts: any, at: number) {
   const payload = JSON.stringify({ items, ...counts, at, updatedAt: new Date().toISOString() });
   const rel = `${BUCKET}/${FEEDS_PATH}`;
-  const baseHeaders = {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json',
-    'cache-control': 'max-age=0',
-  };
   const objUrl = `${SUPABASE_URL}/storage/v1/object/${rel}`;
   // 注意：DELETE 不能带 Content-Type: application/json（无 body 时 Supabase 会报 400），只带鉴权头。
   const authHeaders = {
