@@ -212,13 +212,19 @@ async function writeToSupabase(items: any[], counts: any, at: number) {
     'cache-control': 'max-age=0',
   };
   const objUrl = `${SUPABASE_URL}/storage/v1/object/${rel}`;
+  // 注意：DELETE 不能带 Content-Type: application/json（无 body 时 Supabase 会报 400），只带鉴权头。
+  const authHeaders = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    'cache-control': 'max-age=0',
+  };
   // DELETE 后 Supabase 侧删除可能短暂未生效，紧跟的 POST 会 409；
   // 因此 DELETE 后稍作等待，并对 409 做有限次重试。
   const LAST_WRITE = 3;
   for (let attempt = 1; attempt <= LAST_WRITE; attempt++) {
     let delInfo = '';
     try {
-      const del = await fetch(objUrl, { method: 'DELETE', headers: baseHeaders });
+      const del = await fetch(objUrl, { method: 'DELETE', headers: authHeaders });
       delInfo = `del=${del.status}:${(await del.text().catch(() => '')).slice(0, 120)}`;
     } catch (e: any) {
       delInfo = `del=throw:${e?.message || e}`;
@@ -226,7 +232,7 @@ async function writeToSupabase(items: any[], counts: any, at: number) {
     await new Promise((r) => setTimeout(r, attempt === 1 ? 1500 : 500));
     const res = await fetch(objUrl, {
       method: 'POST',
-      headers: { ...baseHeaders, 'x-upsert': 'false' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json', 'x-upsert': 'false' },
       body: payload,
     });
     if (res.ok) return true;
