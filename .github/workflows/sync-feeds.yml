@@ -1,0 +1,21 @@
+name: sync-feeds
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call Vercel sync-feeds function
+        env:
+          SYNC_URL: ${{ secrets.SYNC_FEEDS_URL || 'https://caratsay-site.vercel.app/api/sync-feeds' }}
+          SYNC_SECRET: ${{ secrets.SYNC_FEEDS_SECRET }}
+        run: |
+          ARGS=()
+          if [ -n "$SYNC_SECRET" ]; then
+            ARGS+=(-H "Authorization: Bearer $SYNC_SECRET")
+          fi
+          curl -fsS -X POST "$SYNC_URL" "${ARGS[@]}" \
+            || echo "::warning::sync-feeds trigger failed (non-fatal)"
