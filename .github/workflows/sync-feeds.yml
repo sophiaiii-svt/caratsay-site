@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Call Vercel sync-feeds function
         env:
-          SYNC_URL: ${{ secrets.SYNC_FEEDS_URL || 'https://caratsay-site.vercel.app/api/sync-feeds' }}
+          SYNC_URL: ${{ secrets.SYNC_FEEDS_URL || 'https://caratsay-site-tau.vercel.app/api/sync-feeds' }}
           SYNC_SECRET: ${{ secrets.SYNC_FEEDS_SECRET }}
         run: |
           ARGS=()
