@@ -211,21 +211,30 @@ async function writeToSupabase(items: any[], counts: any, at: number) {
     'Content-Type': 'application/json',
     'cache-control': 'max-age=0',
   };
-  try {
-    await fetch(`${SUPABASE_URL}/storage/v1/object/${rel}`, { method: 'DELETE', headers: baseHeaders });
-  } catch {
-    /* 旧文件不存在忽略 */
-  }
-  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${rel}`, {
-    method: 'POST',
-    headers: { ...baseHeaders, 'x-upsert': 'false' },
-    body: payload,
-  });
-  if (!res.ok) {
+  const objUrl = `${SUPABASE_URL}/storage/v1/object/${rel}`;
+  // DELETE 后 Supabase 侧删除可能短暂未生效，紧跟的 POST 会 409；
+  // 因此 DELETE 后稍作等待，并对 409 做有限次重试。
+  const LAST_WRITE = 3;
+  for (let attempt = 1; attempt <= LAST_WRITE; attempt++) {
+    try {
+      await fetch(objUrl, { method: 'DELETE', headers: baseHeaders });
+    } catch {
+      /* 旧文件不存在忽略 */
+    }
+    await new Promise((r) => setTimeout(r, attempt === 1 ? 1500 : 500));
+    const res = await fetch(objUrl, {
+      method: 'POST',
+      headers: { ...baseHeaders, 'x-upsert': 'false' },
+      body: payload,
+    });
+    if (res.ok) return true;
     const detail = await res.text().catch(() => '');
-    throw new Error(`Supabase 写入失败 (${res.status}): ${detail}`);
+    const isDuplicate = detail.includes('KeyAlreadyExists') || detail.includes('Duplicate');
+    if (!isDuplicate || attempt === LAST_WRITE) {
+      throw new Error(`Supabase 写入失败 (${res.status}): ${detail}`);
+    }
   }
-  return true;
+  return false;
 }
 
 async function run(dryRun: boolean) {
