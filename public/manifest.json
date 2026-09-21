@@ -1,0 +1,19 @@
+{
+  "name": "SEVENTEEN Fan Blog",
+  "short_name": "SEVENTEEN",
+  "description": "CARAT 的 SEVENTEEN 记录站",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7CAC9",
+  "theme_color": "#92A8D1",
+  "categories": ["entertainment", "blog", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-square-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
