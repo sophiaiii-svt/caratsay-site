@@ -290,11 +290,12 @@ const zh: Dict = {
   'content.fansiteSearch': '各成员站姐资源搜索快捷入口',
 
   // ===== 小分队 =====
-  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 · 官方特别小分队介绍',
+  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 / JxJ / Dino · 官方特别小分队 & 个人 SOLO 介绍',
   'subunit.debut': '出道: {d}',
   'subunit.albums': '专辑作品',
   'subunit.concerts': '演唱会行程',
   'subunit.empty': '暂无演唱会行程',
+  'subunit.upcoming': '即将举办',
 
   // ===== 综艺 =====
   'variety.desc': '按节目名称与年份分类整理 · 每个节目提供官方平台与 B 站观看链接',
@@ -917,11 +918,12 @@ const en: Dict = {
   'content.fansiteSearch': "Quick search entry for each member’s fansite resources",
 
   // ===== Sub-units =====
-  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 · Official special sub-unit intro',
+  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 / JxJ / Dino · Official special sub-units & solo intro',
   'subunit.debut': 'Debut: {d}',
   'subunit.albums': 'Discography',
   'subunit.concerts': 'Concert schedule',
   'subunit.empty': 'No concert schedule yet',
+  'subunit.upcoming': 'Upcoming',
 
   // ===== Variety =====
   'variety.desc': 'Organized by program name and year · official platforms and Bilibili links provided',
@@ -1544,11 +1546,12 @@ const ko: Dict = {
   'content.fansiteSearch': '각 멤버 팬사이트 자원 검색 바로가기',
 
   // ===== 서브유닛 =====
-  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 · 공식 스페셜 서브유닛 소개',
+  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 / JxJ / Dino · 공식 스페셜 서브유닛 & 솔로 소개',
   'subunit.debut': '데뷔: {d}',
   'subunit.albums': '앨범 작품',
   'subunit.concerts': '콘서트 일정',
   'subunit.empty': '콘서트 일정이 없습니다',
+  'subunit.upcoming': '예정',
 
   // ===== 예능 =====
   'variety.desc': '프로그램 이름과 연도별 정리 · 각 프로그램 공식 플랫폼과 비리비리 링크 제공',
@@ -2171,11 +2174,12 @@ const ja: Dict = {
   'content.fansiteSearch': '各メンバーのファンサイト検索へのクイックリンク',
 
   // ===== サブユニット =====
-  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 · 公式スペシャルサブユニット紹介',
+  'subunit.desc': 'BSS / JxW / HxW / CxM / DxS / V8 / JxJ / Dino · 公式スペシャルサブユニット & ソロ紹介',
   'subunit.debut': 'デビュー: {d}',
   'subunit.albums': 'ディスコグラフィ',
   'subunit.concerts': 'コンサート予定',
   'subunit.empty': 'コンサート予定はありません',
+  'subunit.upcoming': '開催予定',
 
   // ===== バラエティ =====
   'variety.desc': '番組名・年別に整理 · 各番組の公式プラットフォームとBilibiliリンクを掲載',

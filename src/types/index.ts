@@ -94,7 +94,7 @@ export interface SubUnit {
   debut: string;
   description: string;
   albums: { title: string; releaseDate: string; titleTrack: string }[];
-  concerts: { name: string; dates: string; cities: string[]; status: 'done' | 'none' }[];
+  concerts: { name: string; dates: string; cities: string[]; status: 'done' | 'none' | 'upcoming' }[];
   color: string;
 }
 

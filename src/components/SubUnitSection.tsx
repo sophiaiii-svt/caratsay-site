@@ -69,24 +69,38 @@ export default function SubUnitSection() {
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-2">{t('subunit.concerts')}</h4>
                   <div className="space-y-2">
-                    {unit.concerts.map((concert, cidx) => (
-                      <div
-                        key={cidx}
-                        className={`text-sm p-3 rounded-xl ${concert.status === 'none' ? 'bg-muted/50 text-muted-foreground' : 'bg-muted'}`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold">{L(concert.name)}</span>
-                          <span className="text-xs text-muted-foreground">{concert.dates}</span>
+                    {unit.concerts.map((concert, cidx) => {
+                      const isUpcoming = concert.status === 'upcoming';
+                      return (
+                        <div
+                          key={cidx}
+                          className={`text-sm p-3 rounded-xl ${concert.status === 'none' ? 'bg-muted/50 text-muted-foreground' : isUpcoming ? 'bg-muted border' : 'bg-muted'}`}
+                          style={isUpcoming ? { borderColor: unit.color } : undefined}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold">{L(concert.name)}</span>
+                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {isUpcoming && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                  style={{ backgroundColor: unit.color + '22', color: unit.color }}
+                                >
+                                  {t('subunit.upcoming')}
+                                </span>
+                              )}
+                              {concert.dates}
+                            </span>
+                          </div>
+                          {concert.status === 'none' ? (
+                            <span className="text-xs">{t('subunit.empty')}</span>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              {concert.cities.map((c) => L(c)).join(' / ')}
+                            </p>
+                          )}
                         </div>
-                        {concert.status === 'none' ? (
-                          <span className="text-xs">{t('subunit.empty')}</span>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">
-                            {concert.cities.map((c) => L(c)).join(' / ')}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
