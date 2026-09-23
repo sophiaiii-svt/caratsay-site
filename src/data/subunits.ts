@@ -108,8 +108,9 @@ export const subUnits: SubUnit[] = [
       { title: 'Gilboard (吉BOARD)', releaseDate: '2026.08.03', titleTrack: "Let's Play (놀아보세)" },
     ],
     concerts: [
-      { name: '2026 DINO X Pi Cheolin [GilBOARD SHOW]', dates: '2026.08.21 - 2026.08.23', cities: ['首尔'], status: 'done' },
-      { name: '2026 DINO X Pi Cheolin [BOARD SHOW] - MACAU', dates: '2026.10.09 - 2026.10.11', cities: ['澳门'], status: 'upcoming' },
+      { name: 'Picheolin [길BOARD(Gilboard)] 粉丝签售会 (MUSICPLANT)', dates: '2026.08.07', cities: ['首尔'], status: 'done' },
+      { name: '2026 DINO×PICHEOLIN [길BOARD SHOW]', dates: '2026.08.21 - 2026.08.23', cities: ['首尔'], status: 'done' },
+      { name: '2026 DINO×PICHEOLIN [길BOARD SHOW] - MACAU', dates: '2026.10.09 - 2026.10.11', cities: ['澳门'], status: 'upcoming' },
     ],
     color: '#C77DFF',
   },
@@ -119,12 +120,12 @@ export const subUnits: SubUnit[] = [
     fullName: 'JEONGHAN x JOSHUA',
     members: ['jeonghan', 'joshua'],
     debut: '2026.10.19',
-    description: '尹净汉与洪知秀（Joshua）组成的第七支官方特别小分队，2026.07.06 官宣、09.22 公布团名与出道计划。首张迷你专辑《DREAMSCAPE》以「现实与梦境的边界」为主题，于 2026.10.19 出道。',
+    description: '尹净汉与洪知秀（Joshua）组成的第七支官方特别小分队，2026.07.06 官宣、09.22 公布团名与出道计划。首张迷你专辑《DREAMSCAPE》意为「梦之景象」，涵盖「无意识的幻象」与「渴望实现的理想」双重含义，2026.09.23 起预购、10.19 18:00 (KST) 发行。',
     albums: [
       { title: 'DREAMSCAPE', releaseDate: '2026.10.19', titleTrack: '（待公布）' },
     ],
     concerts: [
-      { name: 'JxJ DREAMSCAPE 发行 Showcase', dates: '2026.10.19', cities: ['首尔'], status: 'upcoming' },
+      { name: '《DREAMSCAPE》发售纪念 SPECIAL FAN PARTY', dates: '2026.11.08', cities: ['首尔'], status: 'upcoming' },
     ],
     color: '#2EC4B6',
   },
