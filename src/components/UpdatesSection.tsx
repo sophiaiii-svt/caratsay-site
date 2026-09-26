@@ -248,7 +248,7 @@ export default function UpdatesSection() {
   const [formUrl, setFormUrl] = useState('');
   const [formWho, setFormWho] = useState('');
   const [formKind, setFormKind] = useState<UpdateKind>('post');
-  const [formDate, setFormDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [formDate, setFormDate] = useState(() => toDatetimeLocal(new Date().toISOString()));
   const [formTitle, setFormTitle] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formRaw, setFormRaw] = useState(''); // 整段分享文案（AI 辅助识别标题+链接）
@@ -353,7 +353,7 @@ export default function UpdatesSection() {
   /* 打开补充表单时：上传时间复位为今天，并清空上次识别到的发布时间 / 媒体 */
   useEffect(() => {
     if (showForm) {
-      setFormDate(new Date().toISOString().slice(0, 10));
+      setFormDate(toDatetimeLocal(new Date().toISOString()));
       setFormPublishedAt(undefined);
       setFormMedia([]);
       setMultiMode(false);
@@ -486,7 +486,7 @@ export default function UpdatesSection() {
     }
     const title = formTitle.trim() || defaultTitle;
     // 上传时间：以表单日期（默认=今天，即上传日）为准，绝不采用链接的发布时间
-    const date = formDate ? `${formDate}T12:00:00` : new Date().toISOString().slice(0, 16);
+    const date = formDate ? `${formDate}:00` : new Date().toISOString().slice(0, 16);
     const payload: Omit<CloudUpdate, 'id'> = {
       category,
       memberId,
@@ -1056,7 +1056,7 @@ export default function UpdatesSection() {
               <div>
                 <label className="text-xs text-muted-foreground">{t('updates.fDate')}</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -1578,7 +1578,7 @@ const UpdateCard = memo(function UpdateCard({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description || '');
-  const [editDate, setEditDate] = useState(item.date.slice(0, 10));
+  const [editDate, setEditDate] = useState(toDatetimeLocal(item.date));
   const [editPublishedAt, setEditPublishedAt] = useState(toDatetimeLocal(item.publishedAt ?? item.date));
   const [editUrl, setEditUrl] = useState(item.url || '');
   const [editUploading, setEditUploading] = useState(false);
@@ -1606,7 +1606,7 @@ const UpdateCard = memo(function UpdateCard({
   const startEdit = () => {
     setEditTitle(item.title);
     setEditDesc(item.description || '');
-    setEditDate(item.date.slice(0, 10));
+    setEditDate(toDatetimeLocal(item.date));
     setEditPublishedAt(toDatetimeLocal(item.publishedAt ?? item.date));
     setEditUrl(item.url || '');
     setEditMulti(item.category === 'member' && !!(item.memberIds && item.memberIds.length > 1));
@@ -1633,7 +1633,7 @@ const UpdateCard = memo(function UpdateCard({
   const saveEdit = async () => {
     if (!onEdit) return;
     setSaving(true);
-    const dateIso = editDate ? `${editDate}T12:00:00` : item.date;
+    const dateIso = editDate ? `${editDate}:00` : item.date;
     const publishedAtIso = editPublishedAt ? fromDatetimeLocal(editPublishedAt) : item.publishedAt;
     /* 计算「所属 / 多人共创」成员归属 */
     let category: UpdateCategory;
@@ -1797,7 +1797,7 @@ const UpdateCard = memo(function UpdateCard({
               <div>
                 <label className="text-[11px] text-muted-foreground">{t('updates.editDate')}</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
                   className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
