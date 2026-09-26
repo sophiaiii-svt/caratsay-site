@@ -820,8 +820,8 @@ export default function UpdatesSection() {
     }
     list = [...list].sort((a, b) => {
       // 按「笔记原发布时间」排序：优先 publishedAt，其次 date；不再按上传时间(timestamp)
-      const ta = new Date(a.publishedAt ?? a.date).getTime();
-      const tb = new Date(b.publishedAt ?? b.date).getTime();
+      const ta = new Date(pickTime(a.publishedAt, a.date)).getTime();
+      const tb = new Date(pickTime(b.publishedAt, b.date)).getTime();
       return asc ? ta - tb : tb - ta;
     });
     return list;
@@ -1540,6 +1540,15 @@ function fromDatetimeLocal(s: string): string {
   return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
+/* 12:00 占位符正则（旧版只有日期选择器时保存的 T12:00:00） */
+const IS_PLACEHOLDER_12 = /T12:00(|:00)$/;
+
+/* 取展示/排序用的有效时间：publishedAt 若是 12:00 占位符，则回退到用户设置的 date */
+function pickTime(publishedAt?: string | null, date?: string): string {
+  if (publishedAt && !IS_PLACEHOLDER_12.test(publishedAt)) return publishedAt;
+  return date || publishedAt || '';
+}
+
 const UpdateCard = memo(function UpdateCard({
   item,
   footerExtra,
@@ -1592,7 +1601,9 @@ const UpdateCard = memo(function UpdateCard({
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description || '');
   const [editDate, setEditDate] = useState(toDatetimeLocal(item.publishedAt ?? item.date));
-  const [editPublishedAt, setEditPublishedAt] = useState(toDatetimeLocal(item.publishedAt ?? item.date));
+  const [editPublishedAt, setEditPublishedAt] = useState(
+    item.publishedAt && !IS_PLACEHOLDER_12.test(item.publishedAt) ? toDatetimeLocal(item.publishedAt) : '',
+  );
   const [editUrl, setEditUrl] = useState(item.url || '');
   const [editUploading, setEditUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1620,7 +1631,7 @@ const UpdateCard = memo(function UpdateCard({
     setEditTitle(item.title);
     setEditDesc(item.description || '');
     setEditDate(toDatetimeLocal(item.date));
-    setEditPublishedAt(toDatetimeLocal(item.publishedAt ?? item.date));
+    setEditPublishedAt(item.publishedAt && !IS_PLACEHOLDER_12.test(item.publishedAt) ? toDatetimeLocal(item.publishedAt) : '');
     setEditUrl(item.url || '');
     setEditMulti(item.category === 'member' && !!(item.memberIds && item.memberIds.length > 1));
     setEditWho(
@@ -1647,7 +1658,13 @@ const UpdateCard = memo(function UpdateCard({
     if (!onEdit) return;
     setSaving(true);
     const dateIso = editDate ? `${editDate}:00` : item.date;
-    const publishedAtIso = editPublishedAt ? fromDatetimeLocal(editPublishedAt) : item.publishedAt;
+    // 只保留用户真正填写的「原帖发布时间」；12:00 占位符一律丢弃，避免覆盖主时间
+    const publishedAtIso =
+      editPublishedAt && !IS_PLACEHOLDER_12.test(editPublishedAt)
+        ? fromDatetimeLocal(editPublishedAt)
+        : item.publishedAt && !IS_PLACEHOLDER_12.test(item.publishedAt)
+          ? item.publishedAt
+          : undefined;
     /* 计算「所属 / 多人共创」成员归属 */
     let category: UpdateCategory;
     let memberId: string | null;
@@ -1895,8 +1912,8 @@ const UpdateCard = memo(function UpdateCard({
             <div className="flex items-center justify-between mt-3 gap-3">
               <span className="text-xs text-muted-foreground shrink-0">
                 {/* 对克拉补充，显示笔记原发布时间（publishedAt ?? date），不再显示上传时间 */}
-                {fmtDateTime(lang, new Date(item.publishedAt ?? item.date))}
-                <span className="ml-2 text-[11px] opacity-70">{fmtRelative(lang, new Date(item.publishedAt ?? item.date))}</span>
+                {fmtDateTime(lang, new Date(pickTime(item.publishedAt, item.date)))}
+                <span className="ml-2 text-[11px] opacity-70">{fmtRelative(lang, new Date(pickTime(item.publishedAt, item.date)))}</span>
               </span>
               <div className="flex items-center justify-end shrink-0">
                 {onEdit && (
