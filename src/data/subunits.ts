@@ -120,7 +120,7 @@ export const subUnits: SubUnit[] = [
     fullName: 'JEONGHAN x JOSHUA',
     members: ['jeonghan', 'joshua'],
     debut: '2026.10.19',
-    description: '尹净汉与洪知秀（Joshua）组成的第七支官方特别小分队，2026.07.06 官宣、09.22 公布团名与出道计划。首张迷你专辑《DREAMSCAPE》意为「梦之景象」，涵盖「无意识的幻象」与「渴望实现的理想」双重含义，2026.09.23 起预购、10.19 18:00 (KST) 发行。',
+    description: '尹净汉与洪知秀（Joshua）组成的第七支官方特别小分队。2026.07.06 官宣，09.22 公布团名 JxJ 并确认于 2026.10.19 正式出道。首张迷你专辑《DREAMSCAPE》意为「梦之景象」，涵盖「无意识的幻象」与「渴望实现的理想」双重含义，2026.09.23 起预购、10.19 18:00 (KST) 发行。',
     albums: [
       { title: 'DREAMSCAPE', releaseDate: '2026.10.19', titleTrack: '（待公布）' },
     ],
