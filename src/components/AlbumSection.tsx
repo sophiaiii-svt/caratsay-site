@@ -17,8 +17,8 @@ const typeColors: Record<Album['type'], string> = {
 
 type MainTab = 'group' | 'subunit' | 'solo';
 
-// 个人 / 小分队分组顺序（同年份时按此优先级）
-const SOLO_TIE = ['JUN', 'HOSHI', 'WOOZI', 'THE 8', 'JEONGHAN', 'JOSHUA', 'DINO'];
+// 个人板块成员顺序 = SEVENTEEN 官方成员顺序（S.Coups → Dino）
+const SOLO_TIE = ['S.COUPS', 'JEONGHAN', 'JOSHUA', 'JUN', 'HOSHI', 'WONWOO', 'WOOZI', 'THE 8', 'MINGYU', 'DK', 'SEUNGKWAN', 'VERNON', 'DINO'];
 const SUBUNIT_TIE = ['BSS', 'JxW', 'HxW', 'CxM', 'DxS', 'V8', 'JxJ'];
 
 export default function AlbumSection() {
@@ -42,8 +42,12 @@ export default function AlbumSection() {
   const sortByDate = (arr: Album[], asc = true): Album[] =>
     [...arr].sort((a, b) => (asc ? a.releaseDate.localeCompare(b.releaseDate) : b.releaseDate.localeCompare(a.releaseDate)));
 
-  // 按成员 / 小分队分组：组间按各自最早发行年份正序，组内按发行时间正序
-  const groupByArtist = (arr: Album[], tie: string[]): { artist: string; albums: Album[] }[] => {
+  // 按成员 / 小分队分组；orderMode='tie' 直接按固定顺序（官方成员顺序），'year' 按各自最早发行年份正序
+  const groupByArtist = (
+    arr: Album[],
+    tie: string[],
+    orderMode: 'tie' | 'year' = 'year',
+  ): { artist: string; albums: Album[] }[] => {
     const map = new Map<string, Album[]>();
     for (const a of arr) {
       const key = a.artist ?? 'OTHER';
@@ -51,12 +55,15 @@ export default function AlbumSection() {
       map.get(key)!.push(a);
     }
     const keys = [...map.keys()].sort((x, y) => {
+      const ix = tie.indexOf(x);
+      const iy = tie.indexOf(y);
+      if (orderMode === 'tie') {
+        return (ix === -1 ? 999 : ix) - (iy === -1 ? 999 : iy) || x.localeCompare(y);
+      }
       const earliest = (k: string) => map.get(k)!.reduce((m, a) => (a.releaseDate < m ? a.releaseDate : m), map.get(k)![0].releaseDate);
       const dx = earliest(x);
       const dy = earliest(y);
       if (dx !== dy) return dx.localeCompare(dy);
-      const ix = tie.indexOf(x);
-      const iy = tie.indexOf(y);
       if (ix !== iy) return (ix === -1 ? 999 : ix) - (iy === -1 ? 999 : iy);
       return x.localeCompare(y);
     });
@@ -68,7 +75,7 @@ export default function AlbumSection() {
 
   // 小分队 / 个人：先按小分队或成员分组，组内按年份正序
   const subunitGroups = groupByArtist(subUnitAlbums, SUBUNIT_TIE);
-  const soloGroups = groupByArtist(soloAlbums, SOLO_TIE);
+  const soloGroups = groupByArtist(soloAlbums, SOLO_TIE, 'tie');
 
   const tabs: { key: MainTab; label: string }[] = [
     { key: 'group', label: t('album.tab.seventeen') },

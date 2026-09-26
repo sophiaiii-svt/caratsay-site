@@ -1,0 +1,19 @@
+{
+  "artists": [
+    { "key": "SEVENTEEN", "bucket": "group", "search": "SEVENTEEN" },
+    { "key": "BSS", "bucket": "subunit", "search": "BSS SEVENTEEN" },
+    { "key": "JxW", "bucket": "subunit", "search": "JEONGHAN WONWOO" },
+    { "key": "HxW", "bucket": "subunit", "search": "HOSHI WOOZI" },
+    { "key": "CxM", "bucket": "subunit", "search": "CxM SEVENTEEN" },
+    { "key": "DxS", "bucket": "subunit", "search": "DK SEUNGKWAN" },
+    { "key": "V8", "bucket": "subunit", "search": "VERNON THE 8" },
+    { "key": "JxJ", "bucket": "subunit", "search": "JEONGHAN JOSHUA" },
+    { "key": "WOOZI", "bucket": "solo", "search": "WOOZI" },
+    { "key": "HOSHI", "bucket": "solo", "search": "HOSHI" },
+    { "key": "THE 8", "bucket": "solo", "search": "THE 8 SEVENTEEN" },
+    { "key": "JUN", "bucket": "solo", "search": "JUN SEVENTEEN" },
+    { "key": "JOSHUA", "bucket": "solo", "search": "JOSHUA SEVENTEEN" },
+    { "key": "JEONGHAN", "bucket": "solo", "search": "JEONGHAN" },
+    { "key": "DINO", "bucket": "solo", "search": "DINO SEVENTEEN" }
+  ]
+}
