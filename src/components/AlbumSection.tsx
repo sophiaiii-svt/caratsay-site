@@ -69,7 +69,7 @@ export default function AlbumSection() {
     { key: 'solo', label: t('album.tab.solo') },
   ];
 
-  const renderCard = (album: Album, idx: number, showCategory = false) => (
+  const renderCard = (album: Album, idx: number) => (
     <div
       key={album.id}
       onClick={() => setSelectedAlbum(album)}
@@ -95,14 +95,6 @@ export default function AlbumSection() {
             {badgeText(album)}
           </span>
         </div>
-        {/* 个人板块：显示 个人作品 / OST & 合作 分类 */}
-        {showCategory && (
-          <div className="absolute top-2 right-2">
-            <span className="text-[9px] px-2 py-0.5 rounded-full font-medium bg-black/40 text-white">
-              {album.category === 'ost' ? t('album.solo.ost') : t('album.solo.work')}
-            </span>
-          </div>
-        )}
       </div>
       {/* Album title below */}
       <p className="text-xs font-bold mt-2 text-center truncate group-hover:text-primary transition-colors">{L(album.title)}</p>
@@ -152,7 +144,7 @@ export default function AlbumSection() {
                   <div className="flex-1 h-px bg-border" />
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {group.albums.map((album, idx) => renderCard(album, idx, true))}
+                  {group.albums.map((album, idx) => renderCard(album, idx))}
                 </div>
               </div>
             ))}
