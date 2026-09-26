@@ -17,8 +17,9 @@ const typeColors: Record<Album['type'], string> = {
 
 type MainTab = 'group' | 'subunit' | 'solo';
 
-// 个人板块按成员固定顺序排列
-const SOLO_MEMBER_ORDER = ['DINO', 'WOOZI', 'HOSHI', 'THE 8', 'JUN', 'JOSHUA', 'JEONGHAN'];
+// 个人 / 小分队分组顺序（同年份时按此优先级）
+const SOLO_TIE = ['JUN', 'HOSHI', 'WOOZI', 'THE 8', 'JEONGHAN', 'JOSHUA', 'DINO'];
+const SUBUNIT_TIE = ['BSS', 'JxW', 'HxW', 'CxM', 'DxS', 'V8', 'JxJ'];
 
 export default function AlbumSection() {
   const { t, L } = useI18n();
@@ -38,30 +39,36 @@ export default function AlbumSection() {
 
   const badgeText = (a: Album) => (a.artist ? a.artist : typeLabels[a.type]);
 
-  const sortByDate = (arr: Album[], asc = false): Album[] =>
-    [...arr].sort((a, b) =>
-      asc ? a.releaseDate.localeCompare(b.releaseDate) : b.releaseDate.localeCompare(a.releaseDate),
-    );
+  const sortByDate = (arr: Album[], asc = true): Album[] =>
+    [...arr].sort((a, b) => (asc ? a.releaseDate.localeCompare(b.releaseDate) : b.releaseDate.localeCompare(a.releaseDate)));
 
-  // 团体 / 小分队：按发行时间倒序（最新在前）
-  const list =
-    tab === 'group' ? sortByDate(albums) : tab === 'subunit' ? sortByDate(subUnitAlbums) : [];
-
-  // 个人：先按成员分组，组内按时间正序（最早在前）
-  const soloGroups: { artist: string; albums: Album[] }[] = (() => {
+  // 按成员 / 小分队分组：组间按各自最早发行年份正序，组内按发行时间正序
+  const groupByArtist = (arr: Album[], tie: string[]): { artist: string; albums: Album[] }[] => {
     const map = new Map<string, Album[]>();
-    for (const a of soloAlbums) {
+    for (const a of arr) {
       const key = a.artist ?? 'OTHER';
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(a);
     }
     const keys = [...map.keys()].sort((x, y) => {
-      const ix = SOLO_MEMBER_ORDER.indexOf(x);
-      const iy = SOLO_MEMBER_ORDER.indexOf(y);
-      return (ix === -1 ? 999 : ix) - (iy === -1 ? 999 : iy);
+      const earliest = (k: string) => map.get(k)!.reduce((m, a) => (a.releaseDate < m ? a.releaseDate : m), map.get(k)![0].releaseDate);
+      const dx = earliest(x);
+      const dy = earliest(y);
+      if (dx !== dy) return dx.localeCompare(dy);
+      const ix = tie.indexOf(x);
+      const iy = tie.indexOf(y);
+      if (ix !== iy) return (ix === -1 ? 999 : ix) - (iy === -1 ? 999 : iy);
+      return x.localeCompare(y);
     });
     return keys.map((k) => ({ artist: k, albums: sortByDate(map.get(k)!, true) }));
-  })();
+  };
+
+  // SEVENTEEN：全部专辑，按发行时间正序
+  const list = tab === 'group' ? sortByDate(albums, true) : [];
+
+  // 小分队 / 个人：先按小分队或成员分组，组内按年份正序
+  const subunitGroups = groupByArtist(subUnitAlbums, SUBUNIT_TIE);
+  const soloGroups = groupByArtist(soloAlbums, SOLO_TIE);
 
   const tabs: { key: MainTab; label: string }[] = [
     { key: 'group', label: t('album.tab.seventeen') },
@@ -102,6 +109,23 @@ export default function AlbumSection() {
     </div>
   );
 
+  const renderGroups = (groups: { artist: string; albums: Album[] }[]) => (
+    <div className="space-y-10">
+      {groups.map((group) => (
+        <div key={group.artist}>
+          {/* 分组标题（小分队 / 成员） */}
+          <div className="flex items-center gap-3 mb-4">
+            <h3 className="text-lg font-bold text-foreground">{group.artist}</h3>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {group.albums.map((album, idx) => renderCard(album, idx))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
       <div className="max-w-7xl mx-auto">
@@ -130,25 +154,14 @@ export default function AlbumSection() {
         </div>
 
         {/* Album timeline */}
-        {tab !== 'solo' ? (
+        {tab === 'group' ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {list.map((album, idx) => renderCard(album, idx))}
           </div>
+        ) : tab === 'subunit' ? (
+          renderGroups(subunitGroups)
         ) : (
-          <div className="space-y-10">
-            {soloGroups.map((group) => (
-              <div key={group.artist}>
-                {/* 成员分组标题 */}
-                <div className="flex items-center gap-3 mb-4">
-                  <h3 className="text-lg font-bold text-foreground">{group.artist}</h3>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {group.albums.map((album, idx) => renderCard(album, idx))}
-                </div>
-              </div>
-            ))}
-          </div>
+          renderGroups(soloGroups)
         )}
 
         {/* Album detail modal */}
