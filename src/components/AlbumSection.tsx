@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { albums } from '@/data';
+import { albums, subUnitAlbums, soloAlbums } from '@/data';
 import type { Album } from '@/types';
 import SectionTitle from './SectionTitle';
 import { useI18n } from '../i18n/LanguageContext';
@@ -11,11 +11,17 @@ const typeColors: Record<Album['type'], string> = {
   special: 'bg-amber-100 text-amber-700',
   best: 'bg-green-100 text-green-700',
   japanese: 'bg-cyan-100 text-cyan-700',
-  subunit: 'bg-gray-100 text-gray-700',
+  subunit: 'bg-orange-100 text-orange-700',
+  solo: 'bg-pink-100 text-pink-700',
 };
+
+type MainTab = 'group' | 'subunit' | 'solo';
+type SoloSubTab = 'work' | 'ost';
 
 export default function AlbumSection() {
   const { t, L } = useI18n();
+  const [tab, setTab] = useState<MainTab>('group');
+  const [soloSub, setSoloSub] = useState<SoloSubTab>('work');
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
   const typeLabels: Record<Album['type'], string> = {
@@ -26,10 +32,24 @@ export default function AlbumSection() {
     best: t('album.type.best'),
     japanese: t('album.type.japanese'),
     subunit: t('album.type.subunit'),
+    solo: t('album.type.solo'),
   };
 
-  // Sort by release date (newest first)
-  const sortedAlbums = [...albums].sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+  const badgeText = (a: Album) => (a.artist ? a.artist : typeLabels[a.type]);
+
+  const getList = (): Album[] => {
+    if (tab === 'group') return [...albums];
+    if (tab === 'subunit') return [...subUnitAlbums];
+    return soloAlbums.filter((a) => (soloSub === 'work' ? a.category !== 'ost' : a.category === 'ost'));
+  };
+
+  const list = getList().sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+
+  const tabs: { key: MainTab; label: string }[] = [
+    { key: 'group', label: t('album.tab.seventeen') },
+    { key: 'subunit', label: t('album.tab.subunit') },
+    { key: 'solo', label: t('album.tab.solo') },
+  ];
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
@@ -41,9 +61,48 @@ export default function AlbumSection() {
           <p className="text-muted-foreground">{t('album.desc')}</p>
         </div>
 
+        {/* Main tabs */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {tabs.map((tb) => (
+            <button
+              key={tb.key}
+              onClick={() => setTab(tb.key)}
+              className={`px-5 py-2 rounded-full text-sm font-bold transition-colors ${
+                tab === tb.key
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-card text-muted-foreground hover:text-foreground border border-border'
+              }`}
+            >
+              {tb.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Solo sub-tabs */}
+        {tab === 'solo' && (
+          <div className="flex justify-center gap-2 mb-8">
+            <button
+              onClick={() => setSoloSub('work')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                soloSub === 'work' ? 'bg-pink-500 text-white' : 'bg-card text-muted-foreground border border-border'
+              }`}
+            >
+              {t('album.solo.work')}
+            </button>
+            <button
+              onClick={() => setSoloSub('ost')}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                soloSub === 'ost' ? 'bg-pink-500 text-white' : 'bg-card text-muted-foreground border border-border'
+              }`}
+            >
+              {t('album.solo.ost')}
+            </button>
+          </div>
+        )}
+
         {/* Album timeline */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {sortedAlbums.map((album, idx) => (
+          {list.map((album, idx) => (
             <div
               key={album.id}
               onClick={() => setSelectedAlbum(album)}
@@ -63,10 +122,10 @@ export default function AlbumSection() {
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <span className="text-white text-xs font-medium px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">{t('album.detail')}</span>
                 </div>
-                {/* Type badge */}
+                {/* Type / artist badge */}
                 <div className="absolute top-2 left-2">
                   <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${typeColors[album.type]}`}>
-                    {typeLabels[album.type]}
+                    {badgeText(album)}
                   </span>
                 </div>
               </div>
@@ -100,7 +159,7 @@ export default function AlbumSection() {
                 </button>
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${typeColors[selectedAlbum.type]}`}>
-                    {typeLabels[selectedAlbum.type]}
+                    {badgeText(selectedAlbum)}
                   </span>
                   <span className="text-white/80 text-xs font-medium">{selectedAlbum.releaseDate}</span>
                 </div>
@@ -112,7 +171,6 @@ export default function AlbumSection() {
               <div className="p-8">
                 <p className="text-sm text-muted-foreground mb-6">{L(selectedAlbum.description)}</p>
 
-                {/* Photocard config (if available) */}
                 {selectedAlbum.photocardInfo && (
                   <>
                     <h4 className="font-bold text-sm mb-3">{t('album.config')}</h4>
@@ -122,7 +180,6 @@ export default function AlbumSection() {
                   </>
                 )}
 
-                {/* Benefits (if available) */}
                 {selectedAlbum.benefits && selectedAlbum.benefits.length > 0 && (
                   <>
                     <h4 className="font-bold text-sm mb-3">{t('album.benefits')}</h4>
@@ -139,23 +196,27 @@ export default function AlbumSection() {
 
                 {/* Track list */}
                 <h4 className="font-bold text-sm mb-3">{t('album.tracks')}</h4>
-                <div className="space-y-1.5">
-                  {selectedAlbum.tracks.map((track, idx) => {
-                  const normalizedTrack = track.toLowerCase().replace(/[\s()（）\[\]]/g, '');
-                  const normalizedTitle = selectedAlbum.titleTrack.toLowerCase().replace(/[\s()（）\[\]]/g, '');
-                  const isTitle = normalizedTitle === normalizedTrack ||
-                    selectedAlbum.titleTrack.split('/').some(t => t.trim().toLowerCase().replace(/[\s()（）\[\]]/g, '') === normalizedTrack);
-                  return (
-                    <div key={idx} className="flex items-center gap-3 text-sm py-1.5 px-3 rounded-lg hover:bg-muted/50">
-                      <span className="text-muted-foreground w-6 text-xs">{String(idx + 1).padStart(2, '0')}</span>
-                      <span className={isTitle ? 'font-bold text-primary' : ''}>{L(track)}</span>
-                      {isTitle && (
-                        <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('album.badge')}</span>
-                      )}
-                    </div>
-                  );
-                })}
-                </div>
+                {selectedAlbum.tracks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-xl">{t('album.tracksTBA')}</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {selectedAlbum.tracks.map((track, idx) => {
+                      const normalizedTrack = track.toLowerCase().replace(/[\s()（）\[\]]/g, '');
+                      const normalizedTitle = selectedAlbum.titleTrack.toLowerCase().replace(/[\s()（）\[\]]/g, '');
+                      const isTitle = normalizedTitle === normalizedTrack ||
+                        selectedAlbum.titleTrack.split('/').some((tt) => tt.trim().toLowerCase().replace(/[\s()（）\[\]]/g, '') === normalizedTrack);
+                      return (
+                        <div key={idx} className="flex items-center gap-3 text-sm py-1.5 px-3 rounded-lg hover:bg-muted/50">
+                          <span className="text-muted-foreground w-6 text-xs">{String(idx + 1).padStart(2, '0')}</span>
+                          <span className={isTitle ? 'font-bold text-primary' : ''}>{L(track)}</span>
+                          {isTitle && (
+                            <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('album.badge')}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

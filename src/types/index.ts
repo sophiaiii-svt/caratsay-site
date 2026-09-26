@@ -27,7 +27,7 @@ export interface Member {
 export interface Album {
   id: string;
   title: string;
-  type: 'mini' | 'full' | 'repackage' | 'special' | 'best' | 'japanese' | 'subunit';
+  type: 'mini' | 'full' | 'repackage' | 'special' | 'best' | 'japanese' | 'subunit' | 'solo';
   releaseDate: string;
   year: number;
   coverColor: string;
@@ -40,6 +40,10 @@ export interface Album {
   photocardInfo?: string;
   /** 通路特典 */
   benefits?: { store: string; description: string }[];
+  /** 艺人 / 小分队名（用于徽章显示，如 BSS、WOOZI） */
+  artist?: string;
+  /** 个人板块分类：solo=个人作品，ost=OST & 合作 */
+  category?: 'solo' | 'ost';
 }
 
 export interface Concert {

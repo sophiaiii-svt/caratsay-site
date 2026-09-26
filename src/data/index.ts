@@ -1,5 +1,5 @@
 export { members, officialAccounts } from './members';
-export { albums, subUnitAlbums } from './albums';
+export { albums, subUnitAlbums, soloAlbums } from './albums';
 export { tours, fanmeetings } from './concerts';
 export { varietyShows } from './variety';
 export { subUnits } from './subunits';
