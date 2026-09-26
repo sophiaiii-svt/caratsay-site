@@ -385,6 +385,34 @@ export const tours: Tour[] = [
       { city: '香港', venue: 'AsiaWorld-Expo Hall 10', dates: '2026.07.17 - 2026.07.19', status: 'ended' },
     ],
   },
+  {
+    id: 'dino-gilboard-show',
+    theme: '2026 DINO×PICHEOLIN [길BOARD SHOW]',
+    year: '2026',
+    scope: 'subunit',
+    subUnitId: 'dino',
+    description: 'Dino（李灿）首支个人 SOLO「副人格 Pi Cheolin（피철인）」的首次个人演唱会，宣传迷你专辑《Gilboard（吉BOARD）》。首尔蚕室室内体育馆三天连开后移师澳门 Studio City Event Center，另于 08.07 在 MUSICPLANT 举行粉丝签售会，共 2 城 4 场。',
+    link: 'https://weverse.io/seventeen',
+    linkLabel: 'Weverse',
+    stops: [
+      { city: '首尔', venue: 'MUSICPLANT（粉丝签售会）', dates: '2026.08.07', status: 'ended' },
+      { city: '首尔', venue: '蚕室室内体育馆', dates: '2026.08.21 - 2026.08.23', status: 'ended' },
+      { city: '澳门', venue: 'Studio City Event Center', dates: '2026.10.09 - 2026.10.11', status: 'upcoming' },
+    ],
+  },
+  {
+    id: 'jxj-dreamscape-fanparty',
+    theme: 'JxJ DREAMSCAPE 发售纪念 SPECIAL FAN PARTY',
+    year: '2026',
+    scope: 'subunit',
+    subUnitId: 'jxj',
+    description: 'JxJ（尹净汉 × 洪知秀）出道迷你专辑《DREAMSCAPE》发售纪念粉丝见面会，2026.11.08 于首尔女子大学大讲堂举行，为出道后首场粉丝线下活动。应募期间 2026.09.23 - 10.18，10.19 公布中选。',
+    link: 'https://weverse.io/seventeen',
+    linkLabel: 'Weverse',
+    stops: [
+      { city: '首尔', venue: '首尔女子大学大讲堂', dates: '2026.11.08', status: 'upcoming' },
+    ],
+  },
 ];
 
 export const fanmeetings: Fanmeeting[] = [
