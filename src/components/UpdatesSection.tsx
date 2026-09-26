@@ -362,7 +362,8 @@ export default function UpdatesSection() {
   }, [showForm]);
 
   /* 链接自动识别：粘贴链接后，自动抓取文案与发布时间。
-     注意：识别到的「发布时间」只作辅助展示（publishedAt），绝不会覆盖表单里的「上传时间」(formDate)。 */
+     识别到的「原帖发布时间」(publishedAt) 会回填为这条动态的主时间（即发布帖子的人发布的时间，
+     而不是你补链接的时间）；识别不到的平台则保留表单里的日期时间让你手动填真实时分。 */
   const resolveTimer = useRef<number | undefined>(undefined);
   const onUrlChange = (v: string) => {
     const raw = v.trim();
@@ -394,7 +395,10 @@ export default function UpdatesSection() {
         if (!formDesc.trim() && meta.igCaption) setFormDesc(meta.igCaption);
         const baseTitle = who ? who.label : meta.igName || '';
         if (!formTitle.trim()) setFormTitle(`${baseTitle} ${t('updates.igUpdate')}`);
-        if (meta.publishedAt) setFormPublishedAt(meta.publishedAt);
+        if (meta.publishedAt) {
+          setFormPublishedAt(meta.publishedAt);
+          setFormDate(meta.publishedAt.slice(0, 16)); // 原帖发布时间回填为主时间
+        }
         const cap = (meta.igCaption || '').trim();
         setResolveHint(
           `✅ ${t('updates.igRecognized', { name: meta.igName || '' })}${
@@ -403,8 +407,11 @@ export default function UpdatesSection() {
         );
       } else if (meta?.ok) {
         if (!formTitle && meta.title) setFormTitle(meta.title);
-        // 记录链接原始发布时间（仅作辅助信息），不改动 formDate（上传时间）
-        if (meta.publishedAt) setFormPublishedAt(meta.publishedAt);
+        // 链接识别到原帖发布时间 → 回填为主时间（发布帖子的人发布的时间，而非补链接的时间）
+        if (meta.publishedAt) {
+          setFormPublishedAt(meta.publishedAt);
+          setFormDate(meta.publishedAt.slice(0, 16));
+        }
         setResolveHint(
           `${t('updates.autoIdentified', { title: meta.title ? L(meta.title) : '' })}${
             meta.publishedAt ? `（${t('updates.origPublished')} ${fmtDate(lang, new Date(meta.publishedAt))}）` : ''
@@ -485,8 +492,14 @@ export default function UpdatesSection() {
           : `${opt.label} ${L(PLATFORM_META[platform].label)} ${t('updates.dynamic')}`;
     }
     const title = formTitle.trim() || defaultTitle;
-    // 上传时间：以表单日期（默认=今天，即上传日）为准，绝不采用链接的发布时间
-    const date = formDate ? `${formDate}:00` : new Date().toISOString().slice(0, 16);
+    // 主时间优先采用「链接识别出的原帖发布时间」(formPublishedAt)；否则用表单填写的时间（默认=现在）
+    const date = formPublishedAt
+      ? formPublishedAt.length === 16
+        ? `${formPublishedAt}:00`
+        : formPublishedAt.slice(0, 19)
+      : formDate
+        ? `${formDate}:00`
+        : new Date().toISOString().slice(0, 16);
     const payload: Omit<CloudUpdate, 'id'> = {
       category,
       memberId,
@@ -1578,7 +1591,7 @@ const UpdateCard = memo(function UpdateCard({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(item.title);
   const [editDesc, setEditDesc] = useState(item.description || '');
-  const [editDate, setEditDate] = useState(toDatetimeLocal(item.date));
+  const [editDate, setEditDate] = useState(toDatetimeLocal(item.publishedAt ?? item.date));
   const [editPublishedAt, setEditPublishedAt] = useState(toDatetimeLocal(item.publishedAt ?? item.date));
   const [editUrl, setEditUrl] = useState(item.url || '');
   const [editUploading, setEditUploading] = useState(false);
