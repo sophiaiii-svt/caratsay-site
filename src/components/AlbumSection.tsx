@@ -16,12 +16,13 @@ const typeColors: Record<Album['type'], string> = {
 };
 
 type MainTab = 'group' | 'subunit' | 'solo';
-type SoloSubTab = 'work' | 'ost';
+
+// 个人板块按成员固定顺序排列
+const SOLO_MEMBER_ORDER = ['DINO', 'WOOZI', 'HOSHI', 'THE 8', 'JUN', 'JOSHUA', 'JEONGHAN'];
 
 export default function AlbumSection() {
   const { t, L } = useI18n();
   const [tab, setTab] = useState<MainTab>('group');
-  const [soloSub, setSoloSub] = useState<SoloSubTab>('work');
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
   const typeLabels: Record<Album['type'], string> = {
@@ -37,19 +38,77 @@ export default function AlbumSection() {
 
   const badgeText = (a: Album) => (a.artist ? a.artist : typeLabels[a.type]);
 
-  const getList = (): Album[] => {
-    if (tab === 'group') return [...albums];
-    if (tab === 'subunit') return [...subUnitAlbums];
-    return soloAlbums.filter((a) => (soloSub === 'work' ? a.category !== 'ost' : a.category === 'ost'));
-  };
+  const sortByDate = (arr: Album[], asc = false): Album[] =>
+    [...arr].sort((a, b) =>
+      asc ? a.releaseDate.localeCompare(b.releaseDate) : b.releaseDate.localeCompare(a.releaseDate),
+    );
 
-  const list = getList().sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+  // 团体 / 小分队：按发行时间倒序（最新在前）
+  const list =
+    tab === 'group' ? sortByDate(albums) : tab === 'subunit' ? sortByDate(subUnitAlbums) : [];
+
+  // 个人：先按成员分组，组内按时间正序（最早在前）
+  const soloGroups: { artist: string; albums: Album[] }[] = (() => {
+    const map = new Map<string, Album[]>();
+    for (const a of soloAlbums) {
+      const key = a.artist ?? 'OTHER';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(a);
+    }
+    const keys = [...map.keys()].sort((x, y) => {
+      const ix = SOLO_MEMBER_ORDER.indexOf(x);
+      const iy = SOLO_MEMBER_ORDER.indexOf(y);
+      return (ix === -1 ? 999 : ix) - (iy === -1 ? 999 : iy);
+    });
+    return keys.map((k) => ({ artist: k, albums: sortByDate(map.get(k)!, true) }));
+  })();
 
   const tabs: { key: MainTab; label: string }[] = [
     { key: 'group', label: t('album.tab.seventeen') },
     { key: 'subunit', label: t('album.tab.subunit') },
     { key: 'solo', label: t('album.tab.solo') },
   ];
+
+  const renderCard = (album: Album, idx: number, showCategory = false) => (
+    <div
+      key={album.id}
+      onClick={() => setSelectedAlbum(album)}
+      className="group cursor-pointer animate-slide-up"
+      style={{ animationDelay: `${idx * 0.04}s` }}
+    >
+      {/* Album cover */}
+      <div
+        className="aspect-square rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1 relative overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${album.coverColor} 0%, ${album.coverColor}cc 100%)` }}
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
+          <div className="text-white/70 text-[10px] font-medium mb-1 tracking-wider">{album.releaseDate}</div>
+          <div className="text-white font-black text-sm sm:text-base leading-tight mb-2">{L(album.title)}</div>
+          <div className="text-white/80 text-[10px] font-medium line-clamp-1">{t('album.titleTrack', { t: L(album.titleTrack) })}</div>
+        </div>
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-white text-xs font-medium px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">{t('album.detail')}</span>
+        </div>
+        {/* 成员 / 类型徽章 */}
+        <div className="absolute top-2 left-2">
+          <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${typeColors[album.type]}`}>
+            {badgeText(album)}
+          </span>
+        </div>
+        {/* 个人板块：显示 个人作品 / OST & 合作 分类 */}
+        {showCategory && (
+          <div className="absolute top-2 right-2">
+            <span className="text-[9px] px-2 py-0.5 rounded-full font-medium bg-black/40 text-white">
+              {album.category === 'ost' ? t('album.solo.ost') : t('album.solo.work')}
+            </span>
+          </div>
+        )}
+      </div>
+      {/* Album title below */}
+      <p className="text-xs font-bold mt-2 text-center truncate group-hover:text-primary transition-colors">{L(album.title)}</p>
+      <p className="text-[10px] text-muted-foreground text-center">{album.releaseDate}</p>
+    </div>
+  );
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
@@ -78,63 +137,27 @@ export default function AlbumSection() {
           ))}
         </div>
 
-        {/* Solo sub-tabs */}
-        {tab === 'solo' && (
-          <div className="flex justify-center gap-2 mb-8">
-            <button
-              onClick={() => setSoloSub('work')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
-                soloSub === 'work' ? 'bg-pink-500 text-white' : 'bg-card text-muted-foreground border border-border'
-              }`}
-            >
-              {t('album.solo.work')}
-            </button>
-            <button
-              onClick={() => setSoloSub('ost')}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
-                soloSub === 'ost' ? 'bg-pink-500 text-white' : 'bg-card text-muted-foreground border border-border'
-              }`}
-            >
-              {t('album.solo.ost')}
-            </button>
-          </div>
-        )}
-
         {/* Album timeline */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {list.map((album, idx) => (
-            <div
-              key={album.id}
-              onClick={() => setSelectedAlbum(album)}
-              className="group cursor-pointer animate-slide-up"
-              style={{ animationDelay: `${idx * 0.04}s` }}
-            >
-              {/* Album cover */}
-              <div
-                className="aspect-square rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1 relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${album.coverColor} 0%, ${album.coverColor}cc 100%)` }}
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
-                  <div className="text-white/70 text-[10px] font-medium mb-1 tracking-wider">{album.releaseDate}</div>
-                  <div className="text-white font-black text-sm sm:text-base leading-tight mb-2">{L(album.title)}</div>
-                  <div className="text-white/80 text-[10px] font-medium line-clamp-1">{t('album.titleTrack', { t: L(album.titleTrack) })}</div>
+        {tab !== 'solo' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {list.map((album, idx) => renderCard(album, idx))}
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {soloGroups.map((group) => (
+              <div key={group.artist}>
+                {/* 成员分组标题 */}
+                <div className="flex items-center gap-3 mb-4">
+                  <h3 className="text-lg font-bold text-foreground">{group.artist}</h3>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
-                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-xs font-medium px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">{t('album.detail')}</span>
-                </div>
-                {/* Type / artist badge */}
-                <div className="absolute top-2 left-2">
-                  <span className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${typeColors[album.type]}`}>
-                    {badgeText(album)}
-                  </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {group.albums.map((album, idx) => renderCard(album, idx, true))}
                 </div>
               </div>
-              {/* Album title below */}
-              <p className="text-xs font-bold mt-2 text-center truncate group-hover:text-primary transition-colors">{L(album.title)}</p>
-              <p className="text-[10px] text-muted-foreground text-center">{album.releaseDate}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Album detail modal */}
         {selectedAlbum && (
