@@ -603,7 +603,7 @@ export const subUnitAlbums: Album[] = [
     releaseDate: '2026.01.12',
     year: 2026,
     coverColor: '#2A9D8F',
-    titleTrack: 'Rockstar (DK Solo)',
+    titleTrack: 'Blue',
     description: '李硕珉（DK）x 夫胜宽 首张迷你专辑，以「小夜曲」为主题的浪漫曲目。',
     tracks: [
       'Rockstar (DK Solo)',
