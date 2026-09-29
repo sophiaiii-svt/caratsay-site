@@ -479,14 +479,8 @@ async function tusUploadFile(file: File, name: string): Promise<void> {
   }
 }
 
-export async function uploadMediaFile(file: File): Promise<MediaItem> {
-  if (!isCloudEnabled()) throw new Error('云端未配置');
-  if (file.size > MAX_UPLOAD_BYTES) throw new Error('文件超过 50MB 上限');
-  /* 永久化方案：若启用 Cloudflare R2（Vercel 部署时 VITE_R2_ENABLED=true），
-     媒体直接传到 R2，绕开 Supabase 存储配额；JSON 动态索引仍走 Supabase。 */
-  if (import.meta.env.VITE_R2_ENABLED === 'true') {
-    return uploadMediaToR2(file);
-  }
+/** Supabase Storage 上传（TUS 分片 / 小文件直传）——作为 R2 直传失败时的回退通道 */
+async function uploadMediaToSupabase(file: File): Promise<MediaItem> {
   const name = mediaFileName(file);
   /* 大文件走 TUS 分片，小文件保持原直传以节省一次 HTTP 请求 */
   if (file.size > TUS_THRESHOLD) {
@@ -517,6 +511,32 @@ export async function uploadMediaFile(file: File): Promise<MediaItem> {
     type: guessMediaType(file),
     name: file.name,
   };
+}
+
+export async function uploadMediaFile(file: File): Promise<MediaItem> {
+  if (!isCloudEnabled()) throw new Error('云端未配置');
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error('文件超过 50MB 上限');
+  /* 永久化方案：若启用 Cloudflare R2（Vercel 部署时 VITE_R2_ENABLED=true），
+     媒体优先直传 R2；但 R2 的 S3 API 端点(*.r2.cloudflarestorage.com)在部分
+     网络（如国内无代理环境）无法直连，表现为 fetch 抛 "Failed to fetch"，
+     而 CDN 域名(pub-*.r2.dev)与 Supabase 可正常访问 —— 因此 R2 失败时
+     自动回退到 Supabase Storage，保证上传不中断。 */
+  if (import.meta.env.VITE_R2_ENABLED === 'true') {
+    try {
+      return await uploadMediaToR2(file);
+    } catch (r2Error) {
+      console.warn('[upload] R2 直传失败，自动回退 Supabase 存储:', r2Error);
+      try {
+        return await uploadMediaToSupabase(file);
+      } catch (sbError) {
+        throw new Error(
+          `R2 直传失败（${r2Error instanceof Error ? r2Error.message : String(r2Error)}），` +
+            `Supabase 回退也失败（${sbError instanceof Error ? sbError.message : String(sbError)}）`,
+        );
+      }
+    }
+  }
+  return uploadMediaToSupabase(file);
 }
 
 export const localStore = { loadLocal, saveLocal };

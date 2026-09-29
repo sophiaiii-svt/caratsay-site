@@ -19,15 +19,20 @@ function guessMediaType(file: File): 'image' | 'video' {
 export async function uploadMediaToR2(file: File): Promise<MediaItem> {
   const ext = file.name.split('.').pop() || '';
   // ① 向本站 Vercel 函数申请一次性 PUT 预签名地址
-  const presign = await fetch('/api/presign', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contentType: file.type || 'application/octet-stream',
-      size: file.size,
-      ext,
-    }),
-  });
+  let presign: Response;
+  try {
+    presign = await fetch('/api/presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contentType: file.type || 'application/octet-stream',
+        size: file.size,
+        ext,
+      }),
+    });
+  } catch {
+    throw new Error('无法连接预签名服务（/api/presign），请检查网络后重试');
+  }
   if (!presign.ok) {
     let detail = '';
     try {
@@ -40,11 +45,17 @@ export async function uploadMediaToR2(file: File): Promise<MediaItem> {
   const { uploadUrl, publicUrl } = await presign.json();
 
   // ② 浏览器直传 R2（不经过本站，省带宽、不受函数体积限制）
-  const put = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    body: file,
-  });
+  let put: Response;
+  try {
+    put = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+  } catch {
+    // 典型场景：国内网络无法直连 *.r2.cloudflarestorage.com（CDN 域名 r2.dev 可以通）
+    throw new Error('无法连接 R2 存储服务器（网络/代理可能屏蔽了 *.r2.cloudflarestorage.com），请开启 VPN 后重试');
+  }
   if (!put.ok) {
     let detail = '';
     try {
