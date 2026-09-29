@@ -46,19 +46,6 @@ interface Quote {
   origin: 'cloud' | 'local';
 }
 
-const genLocalQuote = (
-  memberId: string,
-  text: string,
-  publisherId: string
-): Quote => ({
-  id: uid(),
-  memberId,
-  text,
-  publisherId,
-  createdAt: Date.now(),
-  origin: 'local',
-});
-
 export default function QuotesSection() {
   const cloudOn = isCloudEnabled();
   const { t, L } = useI18n();
@@ -133,31 +120,30 @@ export default function QuotesSection() {
   const add = useCallback(async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (cloudOn) {
-      setPosting(true);
-      try {
-        const cq = await uploadCloudQuote({
-          memberId,
-          text: trimmed,
-          publisherId,
-          timestamp: Date.now(),
-        });
-        setCloudQuotes((prev) => [cq, ...prev]);
-        showToast(t('quotes.publishedCloud'));
-      } catch {
-        const lq = genLocalQuote(memberId, trimmed, publisherId);
-        setLocalQuotes((prev) => [lq, ...prev]);
-        showToast(t('quotes.cloudFailLocal'), 'err');
-      } finally {
-        setPosting(false);
-      }
-    } else {
-      setLocalQuotes((prev) => [genLocalQuote(memberId, trimmed, publisherId), ...prev]);
-      showToast(t('quotes.savedLocal'));
+    if (!cloudOn) {
+      // 全云端策略：未配置云端时不再悄悄存本地（那样别人看不到）
+      showToast(t('quotes.noCloudConfig'), 'err');
+      return;
     }
-    setText('');
+    setPosting(true);
+    try {
+      const cq = await uploadCloudQuote({
+        memberId,
+        text: trimmed,
+        publisherId,
+        timestamp: Date.now(),
+      });
+      setCloudQuotes((prev) => [cq, ...prev]);
+      showToast(t('quotes.publishedCloud'));
+      setText('');
+    } catch {
+      // 全云端策略：失败明确报错并保留输入，方便直接重试
+      showToast(t('quotes.cloudOnlyFail'), 'err');
+    } finally {
+      setPosting(false);
+    }
     if (taRef.current) taRef.current.focus();
-  }, [text, memberId, publisherId, cloudOn, showToast, setLocalQuotes]);
+  }, [text, memberId, publisherId, cloudOn, showToast, t]);
 
   /* ---------- 删除（仅自己发布或建设者） ---------- */
   const del = useCallback(
@@ -175,41 +161,68 @@ export default function QuotesSection() {
     [publisherId, builder, cloudOn, showToast, setLocalQuotes]
   );
 
-  /* ---------- 把本地旧语录同步到云端 ---------- */
-  const handleSync = useCallback(async () => {
-    if (!cloudOn) {
-      showToast(t('quotes.noCloudConfig'), 'err');
-      return;
-    }
-    if (localQuotes.length === 0) {
-      showToast(t('quotes.noSync'));
-      return;
-    }
-    setSyncing(true);
-    let ok = 0;
-    const failed: string[] = [];
-    for (const lq of localQuotes) {
-      try {
-        const cq = await uploadCloudQuote({
-          memberId: lq.memberId,
-          text: lq.text,
-          publisherId: lq.publisherId,
-          timestamp: lq.createdAt,
-        });
-        setCloudQuotes((prev) => [cq, ...prev]);
-        setLocalQuotes((prev) => prev.filter((x) => x.id !== lq.id));
-        ok += 1;
-      } catch {
-        failed.push(lq.id);
+  /* ---------- 把本地旧语录同步到云端（打开页面自动跑一次） ---------- */
+  const syncLocalToCloud = useCallback(
+    async (notify: boolean): Promise<{ ok: number; fail: number }> => {
+      if (!cloudOn) {
+        if (notify) showToast(t('quotes.noCloudConfig'), 'err');
+        return { ok: 0, fail: 0 };
       }
-    }
-    setSyncing(false);
-    showToast(
-      t('quotes.syncedOk', { ok }) +
-        (failed.length ? t('quotes.syncedFail', { fail: failed.length }) : ''),
-      failed.length ? 'err' : 'ok'
-    );
-  }, [cloudOn, localQuotes, showToast, setLocalQuotes, t]);
+      const pending: Quote[] = (() => {
+        try {
+          return JSON.parse(localStorage.getItem('dm_quotes') || '[]') as Quote[];
+        } catch {
+          return [];
+        }
+      })();
+      if (pending.length === 0) {
+        if (notify) showToast(t('quotes.noSync'));
+        return { ok: 0, fail: 0 };
+      }
+      setSyncing(true);
+      const failed: string[] = [];
+      let ok = 0;
+      for (const lq of pending) {
+        try {
+          const cq = await uploadCloudQuote({
+            memberId: lq.memberId,
+            text: lq.text,
+            publisherId: lq.publisherId,
+            timestamp: lq.createdAt,
+          });
+          setCloudQuotes((prev) => [cq, ...prev]);
+          setLocalQuotes((prev) => prev.filter((x) => x.id !== lq.id));
+          ok += 1;
+        } catch {
+          failed.push(lq.id);
+        }
+      }
+      setSyncing(false);
+      if (notify) {
+        showToast(
+          t('quotes.syncedOk', { ok }) +
+            (failed.length ? t('quotes.syncedFail', { fail: failed.length }) : ''),
+          failed.length ? 'err' : 'ok'
+        );
+      }
+      return { ok, fail: failed.length };
+    },
+    [cloudOn, showToast, setLocalQuotes, t]
+  );
+
+  const handleSync = useCallback(() => {
+    void syncLocalToCloud(true);
+  }, [syncLocalToCloud]);
+
+  /* 打开页面后自动把本机残留的旧语录补传到云端，让大家都能看到 */
+  const autoSyncDone = useRef(false);
+  useEffect(() => {
+    if (!cloudOn || loadingCloud || cloudError || autoSyncDone.current) return;
+    autoSyncDone.current = true;
+    void syncLocalToCloud(false).then(({ ok }) => {
+      if (ok > 0) showToast(t('quotes.localSynced', { n: ok }));
+    });
+  }, [cloudOn, loadingCloud, cloudError, syncLocalToCloud, showToast, t]);
 
   const canDel = (q: Quote) => q.publisherId === publisherId || builder;
 

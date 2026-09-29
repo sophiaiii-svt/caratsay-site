@@ -294,6 +294,35 @@ export default function UpdatesSection() {
     return () => ctrl.abort();
   }, []);
 
+  /* 打开页面后自动把本机残留（旧版本离线发布）的动态补传到云端，让大家都能看到 */
+  const localSyncedRef = useRef(false);
+  useEffect(() => {
+    if (cloudLoading || localSyncedRef.current) return;
+    const pending = localStore.loadLocal().filter((u) => u.id.startsWith('local_'));
+    if (pending.length === 0) return;
+    localSyncedRef.current = true;
+    void (async () => {
+      const failedIds = new Set<string>();
+      let ok = 0;
+      for (const item of pending) {
+        try {
+          const { id: _legacyId, ...payload } = item;
+          const saved = await uploadCloudUpdate(payload as Omit<CloudUpdate, 'id'>);
+          setCloudUpdates((prev) => [saved, ...prev]);
+          ok += 1;
+        } catch {
+          failedIds.add(item.id);
+        }
+      }
+      const remaining = localStore
+        .loadLocal()
+        .filter((u) => !u.id.startsWith('local_') || failedIds.has(u.id));
+      localStore.saveLocal(remaining);
+      setLocalUpdates(remaining);
+      if (ok > 0) console.info(`[updates] 已把 ${ok} 条本机动态补传到云端`);
+    })();
+  }, [cloudLoading]);
+
   /* 某访客保存自己给某动态上传的媒体（乐观更新本地，再持久化云端） */
   const handleMyMediaChange = useCallback(
     async (safeId: string, media: MediaItem[]) => {
@@ -536,24 +565,12 @@ export default function UpdatesSection() {
       setResolving(false);
       setResolveHint('');
       window.setTimeout(() => setShowForm(false), 1200);
-    } catch {
-      // 云端不可用 → 仅存本机，联网后重新提交即可（注意：媒体文件上传必须先成功，因此本地兜底不带媒体文件）
-      const local: CloudUpdate = {
-        id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        ...payload,
-        media: undefined,
-      };
-      setLocalUpdates((prev) => {
-        const next = [local, ...prev];
-        localStore.saveLocal(next);
-        return next;
-      });
-      setFormMsg(t('updates.cloudUnavailable'));
-      setFormUrl('');
-      setFormTitle('');
-      setFormDesc('');
-      setFormPublishedAt(undefined);
-      setFormMedia([]);
+    } catch (e) {
+      /* 全云端策略：发布失败就把内容留在表单里并明确报错，
+         不再只存本机（否则会出现「自己看得到、别人看不到」）。 */
+      setFormMsg(
+        t('updates.cloudPublishFail') + (e instanceof Error && e.message ? `（${e.message}）` : '')
+      );
     } finally {
       setSubmitting(false);
     }

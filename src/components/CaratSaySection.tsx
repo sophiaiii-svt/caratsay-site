@@ -15,7 +15,6 @@ import {
   loadMine,
   saveMine,
   localStorageSize,
-  MAX_IMAGES,
 } from '@/components/caratsay/storage';
 import MemoryBook from '@/components/caratsay/MemoryBook';
 import LazyImage from '@/components/caratsay/LazyImage';
@@ -24,8 +23,6 @@ import BgmPlayer from '@/components/caratsay/BgmPlayer';
 import { type Photo, type LocalImage } from '@/components/caratsay/types';
 import { useI18n } from '@/i18n/LanguageContext';
 import { fmtDateTime } from '@/i18n/format';
-
-const genId = () => `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 /** dataURL → Blob（用于把本地旧图同步到云端） */
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
@@ -165,43 +162,27 @@ export default function CaratSaySection() {
         return;
       }
 
+      if (!cloudOn) {
+        // 全云端策略：未配置云端时不再悄悄存本地（那样别人看不到）
+        showToast(t('caratsay.noCloudConfig'), 'err');
+        return;
+      }
+
       setUploading(true);
       try {
-        const { data, blob } = await compressImage(file);
-        if (cloudOn) {
-          try {
-            const cp = await uploadCloudPhoto(activeTab, blob);
-            setCloudPhotos((prev) => [cp, ...prev]);
-            addToMine(cp.id);
-            showToast(t('caratsay.uploadedCloud'));
-          } catch {
-            // 云端失败 → 兜底存本地
-            const li: LocalImage = { id: genId(), section: activeTab, data, timestamp: Date.now() };
-            const updated = [li, ...localImages].slice(0, MAX_IMAGES);
-            const r = saveLocal(updated);
-            if (r.ok) setLocalImages(updated);
-            addToMine(li.id);
-            showToast(r.ok ? t('caratsay.cloudFailLocal') : t('caratsay.allFail'), 'err');
-          }
-        } else {
-          const li: LocalImage = { id: genId(), section: activeTab, data, timestamp: Date.now() };
-          const updated = [li, ...localImages].slice(0, MAX_IMAGES);
-          const r = saveLocal(updated);
-          if (r.ok) {
-            setLocalImages(updated);
-            addToMine(li.id);
-            showToast(t('caratsay.savedLocal'));
-          } else {
-            showToast(r.error || t('caratsay.saveFail'), 'err');
-          }
-        }
+        const { blob } = await compressImage(file);
+        const cp = await uploadCloudPhoto(activeTab, blob);
+        setCloudPhotos((prev) => [cp, ...prev]);
+        addToMine(cp.id);
+        showToast(t('caratsay.uploadedCloud'));
       } catch {
-        showToast(t('caratsay.processFail'), 'err');
+        // 全云端策略：失败就明确报错（含重试后的错误），不落本地，避免「只有自己看得见」
+        showToast(t('caratsay.cloudOnlyFail'), 'err');
       } finally {
         setUploading(false);
       }
     },
-    [activeTab, cloudOn, addToMine, showToast, localImages]
+    [activeTab, cloudOn, addToMine, showToast, t]
   );
 
   /* ---------- 删除（仅自己上传的） ---------- */
@@ -231,41 +212,60 @@ export default function CaratSaySection() {
     [removeFromMine, selectedIdx, showToast]
   );
 
-  /* ---------- 把本地旧图同步到云端 ---------- */
-  const handleSync = useCallback(async () => {
-    if (!cloudOn) {
-      showToast(t('caratsay.noCloudConfig'), 'err');
-      return;
-    }
-    if (localImages.length === 0) {
-      showToast(t('caratsay.noSync'));
-      return;
-    }
-    setSyncing(true);
-    let ok = 0;
-    const failedIds: string[] = [];
-    for (const li of localImages) {
-      try {
-        const blob = await dataUrlToBlob(li.data);
-        const cp = await uploadCloudPhoto(li.section, blob);
-        setLocalImages((prev) => {
-          const updated = prev.filter((i) => i.id !== li.id);
-          saveLocal(updated);
-          return updated;
-        });
-        addToMine(cp.id);
-        ok += 1;
-      } catch {
-        failedIds.push(li.id);
+  /* ---------- 把本地旧图同步到云端（每次打开页面自动跑一次） ---------- */
+  const syncLocalToCloud = useCallback(
+    async (notify: boolean): Promise<{ ok: number; fail: number }> => {
+      if (!cloudOn) {
+        if (notify) showToast(t('caratsay.noCloudConfig'), 'err');
+        return { ok: 0, fail: 0 };
       }
-    }
-    setSyncing(false);
-    showToast(
-      t('caratsay.syncedOk', { ok }) +
-        (failedIds.length ? t('caratsay.syncedFail', { fail: failedIds.length }) : ''),
-      failedIds.length ? 'err' : 'ok'
-    );
-  }, [cloudOn, localImages, addToMine, showToast, t]);
+      const pending = loadLocal();
+      if (pending.length === 0) {
+        if (notify) showToast(t('caratsay.noSync'));
+        return { ok: 0, fail: 0 };
+      }
+      setSyncing(true);
+      const rest: LocalImage[] = [];
+      let ok = 0;
+      for (const li of pending) {
+        try {
+          const blob = await dataUrlToBlob(li.data);
+          const cp = await uploadCloudPhoto(li.section, blob);
+          setCloudPhotos((prev) => [cp, ...prev]);
+          addToMine(cp.id);
+          ok += 1;
+        } catch {
+          rest.push(li); // 失败的下次再试，不丢
+        }
+      }
+      saveLocal(rest);
+      setLocalImages(rest);
+      setSyncing(false);
+      if (notify) {
+        showToast(
+          t('caratsay.syncedOk', { ok }) +
+            (rest.length ? t('caratsay.syncedFail', { fail: rest.length }) : ''),
+          rest.length ? 'err' : 'ok'
+        );
+      }
+      return { ok, fail: rest.length };
+    },
+    [cloudOn, addToMine, showToast, t]
+  );
+
+  const handleSync = useCallback(() => {
+    void syncLocalToCloud(true);
+  }, [syncLocalToCloud]);
+
+  /* 打开页面后自动把本机残留的旧照片补传到云端，让大家都能看到 */
+  const autoSyncDone = useRef(false);
+  useEffect(() => {
+    if (!cloudOn || loadingCloud || cloudError || autoSyncDone.current) return;
+    autoSyncDone.current = true;
+    void syncLocalToCloud(false).then(({ ok }) => {
+      if (ok > 0) showToast(t('caratsay.localSynced', { n: ok }));
+    });
+  }, [cloudOn, loadingCloud, cloudError, syncLocalToCloud, showToast, t]);
 
   /* ---------- 大图查看器键盘导航 ---------- */
   const showPrev = useCallback(() => {
