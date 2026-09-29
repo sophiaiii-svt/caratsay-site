@@ -1,6 +1,8 @@
 import { CLOUD_CONFIG, isCloudEnabled } from '@/config/cloud';
 import type { Platform, UpdateKind, UpdateCategory, MediaItem } from '@/data/updates';
-import { uploadMediaToR2 } from '@/lib/r2Storage';
+import { uploadMediaToR2, isR2Available, markR2Unavailable } from '@/lib/r2Storage';
+import { withRetry } from '@/lib/netStability';
+import { optimizeForUpload } from '@/lib/mediaOptimize';
 
 /**
  * 克拉动态 · 云端手动补充
@@ -515,19 +517,25 @@ async function uploadMediaToSupabase(file: File): Promise<MediaItem> {
 
 export async function uploadMediaFile(file: File): Promise<MediaItem> {
   if (!isCloudEnabled()) throw new Error('云端未配置');
-  if (file.size > MAX_UPLOAD_BYTES) throw new Error('文件超过 50MB 上限');
+  /* 稳定性：上传前先在浏览器本地压缩超大图片（手机原图常 4~10MB），
+     体积降到 1/5~1/10，弱网下成功率显著提升；压缩失败会自动用原图。 */
+  const prepared = await optimizeForUpload(file);
+  if (prepared.size > MAX_UPLOAD_BYTES) throw new Error('文件超过 50MB 上限');
+
   /* 永久化方案：若启用 Cloudflare R2（Vercel 部署时 VITE_R2_ENABLED=true），
      媒体优先直传 R2；但 R2 的 S3 API 端点(*.r2.cloudflarestorage.com)在部分
      网络（如国内无代理环境）无法直连，表现为 fetch 抛 "Failed to fetch"，
      而 CDN 域名(pub-*.r2.dev)与 Supabase 可正常访问 —— 因此 R2 失败时
-     自动回退到 Supabase Storage，保证上传不中断。 */
-  if (import.meta.env.VITE_R2_ENABLED === 'true') {
+     自动回退到 Supabase Storage，保证上传不中断。
+     另外 R2 失败后会短暂拉黑 5 分钟，避免同一批后续文件再干等超时。 */
+  if (import.meta.env.VITE_R2_ENABLED === 'true' && isR2Available()) {
     try {
-      return await uploadMediaToR2(file);
+      return await uploadMediaToR2(prepared);
     } catch (r2Error) {
+      markR2Unavailable(5);
       console.warn('[upload] R2 直传失败，自动回退 Supabase 存储:', r2Error);
       try {
-        return await uploadMediaToSupabase(file);
+        return await withRetry(() => uploadMediaToSupabase(prepared), 2);
       } catch (sbError) {
         throw new Error(
           `R2 直传失败（${r2Error instanceof Error ? r2Error.message : String(r2Error)}），` +
@@ -536,7 +544,7 @@ export async function uploadMediaFile(file: File): Promise<MediaItem> {
       }
     }
   }
-  return uploadMediaToSupabase(file);
+  return withRetry(() => uploadMediaToSupabase(prepared), 2);
 }
 
 export const localStore = { loadLocal, saveLocal };

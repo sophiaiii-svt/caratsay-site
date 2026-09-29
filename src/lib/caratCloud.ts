@@ -1,4 +1,5 @@
 import { CLOUD_CONFIG, isCloudEnabled } from '@/config/cloud';
+import { fetchWithTimeout, withRetry } from '@/lib/netStability';
 
 /**
  * 克拉SAY 云端回忆册 —— Supabase Storage 轻客户端
@@ -98,32 +99,39 @@ export async function listCloudPhotos(signal?: AbortSignal): Promise<CloudPhoto[
 export async function uploadCloudPhoto(section: string, blob: Blob): Promise<CloudPhoto> {
   if (!isCloudEnabled()) throw new Error('云端未配置');
 
-  const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
-  const name = buildName(section, ext);
+  /* 稳定性：超时 60s + 网络抖动自动重试（每次换一个新文件名，避免 x-upsert:false 冲突） */
+  return withRetry(async () => {
+    const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg';
+    const name = buildName(section, ext);
 
-  const res = await fetch(`${base()}/storage/v1/object/${CLOUD_CONFIG.bucket}/${name}`, {
-    method: 'POST',
-    headers: authHeaders({
-      'Content-Type': blob.type || 'image/jpeg',
-      'cache-control': 'max-age=31536000',
-      'x-upsert': 'false',
-    }),
-    body: blob,
-  });
+    const res = await fetchWithTimeout(
+      `${base()}/storage/v1/object/${CLOUD_CONFIG.bucket}/${name}`,
+      {
+        method: 'POST',
+        headers: authHeaders({
+          'Content-Type': blob.type || 'image/jpeg',
+          'cache-control': 'max-age=31536000',
+          'x-upsert': 'false',
+        }),
+        body: blob,
+      },
+      60_000,
+    );
 
-  if (!res.ok) {
-    let detail = '';
-    try {
-      const body = await res.json();
-      detail = body?.message || body?.error || '';
-    } catch {
-      /* ignore */
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const body = await res.json();
+        detail = body?.message || body?.error || '';
+      } catch {
+        /* ignore */
+      }
+      throw new Error(detail || `上传失败 (${res.status})`);
     }
-    throw new Error(detail || `上传失败 (${res.status})`);
-  }
 
-  const meta = parseName(name)!;
-  return { id: name, section: meta.section, url: publicUrl(name), timestamp: meta.timestamp };
+    const meta = parseName(name)!;
+    return { id: name, section: meta.section, url: publicUrl(name), timestamp: meta.timestamp };
+  }, 2);
 }
 
 /** 删除云端照片 */
