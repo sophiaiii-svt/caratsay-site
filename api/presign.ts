@@ -13,7 +13,7 @@
  *
  * R2 桶需：① 开启公开读；② CORS 允许本站 origin 的 PUT 方法。
  */
-const MAX_BYTES = 50 * 1024 * 1024; // 50 MB，与前端上限一致
+const MAX_BYTES = 50 * 1024 * 1024; // 50 MB，与前端上限一致（前端会先把超限图片压到该值以内）
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {

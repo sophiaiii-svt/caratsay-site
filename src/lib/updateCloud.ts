@@ -517,9 +517,9 @@ async function uploadMediaToSupabase(file: File): Promise<MediaItem> {
 
 export async function uploadMediaFile(file: File): Promise<MediaItem> {
   if (!isCloudEnabled()) throw new Error('云端未配置');
-  /* 稳定性：上传前先在浏览器本地压缩超大图片（手机原图常 4~10MB），
-     体积降到 1/5~1/10，弱网下成功率显著提升；压缩失败会自动用原图。 */
-  const prepared = await optimizeForUpload(file);
+  /* 画质优先：只有超过 50MB 上限（不压传不上去）的文件才做压缩，
+     其余一律原图直传。压缩后仍超限才报错。 */
+  const prepared = file.size > MAX_UPLOAD_BYTES ? await optimizeForUpload(file, MAX_UPLOAD_BYTES) : file;
   if (prepared.size > MAX_UPLOAD_BYTES) throw new Error('文件超过 50MB 上限');
 
   /* 永久化方案：若启用 Cloudflare R2（Vercel 部署时 VITE_R2_ENABLED=true），
